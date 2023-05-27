@@ -9,7 +9,7 @@ const PostSchema = Schema({
         default:true,
         required: true
     },
-    usuario: {
+    user: {
         type:Schema.Types.ObjectId,
         ref:'User',
         required:true
@@ -17,4 +17,4 @@ const PostSchema = Schema({
 
 });
 
-module.exports = model ('Categorias', CategoriaSchema)
+module.exports = model ('Post', PostSchema)

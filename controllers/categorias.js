@@ -55,7 +55,8 @@ const crearCategoria = async(req, res = response)=>{
     //guardar en BD
     await categoria.save();
 
-    res.status(201).json(categoria); //impresion de la respuesta
+    res.status(201).json(
+        categoria); //impresion de la respuesta
 }
 
 module.exports={

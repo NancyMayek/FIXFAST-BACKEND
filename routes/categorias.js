@@ -10,8 +10,8 @@ const router = Router();
 router.get('/', obtenerCategorias);
 
 //obtner una categorias por id
-router.post('/', [ 
-    check('name','El nombre es obligatorio').not().isEmpty(),
+router.post('/buscarCategoria', [ 
+    check('name','El nombre es obligatorio al buscar').not().isEmpty(),
     validarCampos
 ],obtenerUnaCategoria);
 

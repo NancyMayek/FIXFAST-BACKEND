@@ -1,66 +1,60 @@
-const {response} = require('express');
+const { response, request } = require('express');
 const {Post} = require('../models');
 
-const obtenerCategorias = async(req, res = response)=>{
+
+
+
+const postsGet = async(req = request, res = response) => {
 
     const {limite = 5, desde = 0} = req.query;// argumentos opcionales del query por defecto
     const query = {estado:true};//obtener solo los que estan en estado true
 
-    const [ total, categorias]= await Promise.all([ 
-        Categoria.countDocuments(query),
-        Categoria.find(query)
+    const [ total, posts]= await Promise.all([ 
+        Post.countDocuments(query),
+        Post.find(query)
+            .populate('user','name')
             .skip( Number(desde) )
             .limit( Number(limite) ) //los parametros para enseñar los usuarios
     ])
 
     res.json({//imprimir en la respuesta
         total,
-        categorias
+        posts
     });
+
 }
 
-const obtenerUnaCategoria = async(req, res = response)=>{
+const postsPost = async(req, res = response) => {
 
-    const name =  req.body.name.toUpperCase();//leemos el body y lo capitalozo
+    const {estado, user, ...body}= req.body; //destructuracion
     
-    const categoriaDB = await Categoria.findOne({name});//pregunto si existe una categoria con ese nombre
-
-    if(!categoriaDB){ //si existe
-        return res.status(400).json({
-            msg: `La Categoria ${categoriaDB.name}, no existe`
-        });
-    }
-
-    res.status(201).json(categoriaDB); //impresion de la respuesta
-}
-
-const crearCategoria = async(req, res = response)=>{
-    const name =  req.body.name.toUpperCase();//leemos el body y lo capitalozo
-    
-    const categoriaDB = await Categoria.findOne({name});//pregunto si existe una categoria con ese nombre
-
-    if(categoriaDB){ //si existe
-        return res.status(400).json({
-            msg: `La Categoria ${categoriaDB.name}, ya existe`
-        });
-    }
-
-    //Generar la data a guardar
     const data = {
-        name
+        ...body,
+        user: req.user._id
     }
 
-    const categoria = new Categoria(data);
-
+    const post = new Post({data});//creamos una instancia de un usuario y ponemos los datos (body)
+                     
     //guardar en BD
-    await categoria.save();
+    await post.save();//esperamos a que se salven los datos dentro de la base de datos
 
-    res.status(201).json(categoria); //impresion de la respuesta
+    res.status(201).json({//la respuesta que da cuando se ejecuta
+        post//imprime la instancia
+    });
+
 }
 
-module.exports={
-    crearCategoria, //exportamos la funcion
-    obtenerCategorias,
-    obtenerUnaCategoria
 
+const postsDelete = async(req, res = response) => {
+
+    const { id } = req.params;
+    const postBorrardo = await user.findByIdAndUpdate( id, { estado: false } );
+    res.json(postBorrado);
+}
+
+
+module.exports = {
+    postsGet,
+    postsPost,
+    postsDelete,
 }
