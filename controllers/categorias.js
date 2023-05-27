@@ -1,67 +1,92 @@
-const {response} = require('express');
-const {Categoria} = require('../models');
+const { response } = require('express');
+const { Categoria } = require('../models');
 
-const obtenerCategorias = async(req, res = response)=>{
 
-    const {limite = 5, desde = 0} = req.query;// argumentos opcionales del query por defecto
-    const query = {estado:true};//obtener solo los que estan en estado true
+const obtenerCategorias = async(req, res = response ) => {
 
-    const [ total, categorias]= await Promise.all([ 
+    const { limite = 5, desde = 0 } = req.query;
+    const query = { estado: true };
+
+    const [ total, categorias ] = await Promise.all([
         Categoria.countDocuments(query),
         Categoria.find(query)
-            .skip( Number(desde) )
-            .limit( Number(limite) ) //los parametros para enseñar los usuarios
-    ])
+            .populate('usuario', 'nombre')
+            .skip( Number( desde ) )
+            .limit(Number( limite ))
+    ]);
 
-    res.json({//imprimir en la respuesta
+    res.json({
         total,
         categorias
     });
 }
 
-const obtenerUnaCategoria = async(req, res = response)=>{
+const obtenerCategoria = async(req, res = response ) => {
 
-    const name =  req.body.name.toUpperCase();//leemos el body y lo capitalozo
-    
-    const categoriaDB = await Categoria.findOne({name});//pregunto si existe una categoria con ese nombre
+    const { id } = req.params;
+    const categoria = await Categoria.findById( id )
+                            .populate('usuario', 'nombre');
 
-    if(!categoriaDB){ //si existe
-        return res.status(400).json({
-            msg: `La Categoria ${categoriaDB.name}, no existe`
-        });
-    }
+    res.json( categoria );
 
-    res.status(201).json(categoriaDB); //impresion de la respuesta
 }
 
-const crearCategoria = async(req, res = response)=>{
-    const name =  req.body.name.toUpperCase();//leemos el body y lo capitalozo
-    
-    const categoriaDB = await Categoria.findOne({name});//pregunto si existe una categoria con ese nombre
+const crearCategoria = async(req, res = response ) => {
 
-    if(categoriaDB){ //si existe
+    const nombre = req.body.nombre.toUpperCase();
+
+    const categoriaDB = await Categoria.findOne({ nombre });
+
+    if ( categoriaDB ) {
         return res.status(400).json({
-            msg: `La Categoria ${categoriaDB.name}, ya existe`
+            msg: `La categoria ${ categoriaDB.nombre }, ya existe`
         });
     }
 
-    //Generar la data a guardar
+    // Generar la data a guardar
     const data = {
-        name
+        nombre,
+        usuario: req.usuario._id
     }
 
-    const categoria = new Categoria(data);
+    const categoria = new Categoria( data );
 
-    //guardar en BD
+    // Guardar DB
     await categoria.save();
 
-    res.status(201).json(
-        categoria); //impresion de la respuesta
+    res.status(201).json(categoria);
+
 }
 
-module.exports={
-    crearCategoria, //exportamos la funcion
-    obtenerCategorias,
-    obtenerUnaCategoria
+const actualizarCategoria = async( req, res = response ) => {
 
+    const { id } = req.params;
+    const { estado, usuario, ...data } = req.body;
+
+    data.nombre  = data.nombre.toUpperCase();
+    data.usuario = req.usuario._id;
+
+    const categoria = await Categoria.findByIdAndUpdate(id, data, { new: true });
+
+    res.json( categoria );
+
+}
+
+const borrarCategoria = async(req, res =response ) => {
+
+    const { id } = req.params;
+    const categoriaBorrada = await Categoria.findByIdAndUpdate( id, { estado: false }, {new: true });
+
+    res.json( categoriaBorrada );
+}
+
+
+
+
+module.exports = {
+    crearCategoria,
+    obtenerCategorias,
+    obtenerCategoria,
+    actualizarCategoria,
+    borrarCategoria
 }
